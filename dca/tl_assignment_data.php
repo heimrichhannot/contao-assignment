@@ -15,7 +15,9 @@ $GLOBALS['TL_DCA']['tl_assignment_data'] = [
         ],
         'sql'               => [
             'keys' => [
-                'id' => 'primary',
+                'id'                                      => 'primary',
+                'pid,start,stop,published'                => 'index',
+                'pid,start,stop,published,postal,country' => 'index',
             ],
         ],
     ],
