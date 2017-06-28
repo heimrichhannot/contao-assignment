@@ -36,3 +36,12 @@ ClassLoader::addClasses(array
 	'HeimrichHannot\Assignment\Util\Assignee'          => 'system/modules/assignment/classes/util/Assignee.php',
 	'HeimrichHannot\Assignment\Assignment'             => 'system/modules/assignment/classes/Assignment.php',
 ));
+
+
+/**
+ * Register the templates
+ */
+TemplateLoader::addFiles(array
+(
+	'be_assignment_data_merge' => 'system/modules/assignment/templates/backend',
+));

@@ -34,7 +34,12 @@ $GLOBALS['TL_DCA']['tl_assignment_data'] = [
             'child_record_callback' => ['HeimrichHannot\Assignment\Backend\AssignmentData', 'listChildren'],
         ],
         'global_operations' => [
-            'all' => [
+            'merge' => [
+                'label'      => &$GLOBALS['TL_LANG']['tl_assignment_data']['merge'],
+                'href'            => 'key=merge',
+                'class'           => 'header_sync'
+            ],
+            'all'   => [
                 'label'      => &$GLOBALS['TL_LANG']['MSC']['all'],
                 'href'       => 'act=select',
                 'class'      => 'header_edit_all',
@@ -75,11 +80,6 @@ $GLOBALS['TL_DCA']['tl_assignment_data'] = [
                 'label' => &$GLOBALS['TL_LANG']['tl_assignment_data']['show'],
                 'href'  => 'act=show',
                 'icon'  => 'show.gif',
-            ],
-            'assignees'  => [
-                'label' => &$GLOBALS['TL_LANG']['tl_assignment_data']['assignees'],
-                'href'  => 'act=assignees',
-                'icon'  => 'assignees.gif',
             ],
         ],
     ],

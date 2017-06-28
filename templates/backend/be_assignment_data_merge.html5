@@ -1,0 +1,12 @@
+<div id="tl_buttons">
+    <a href="<?= $this->backHref ?>" class="header_back" title="<?= $this->backTitle ?>"><?= $this->backButton ?></a>
+</div>
+
+<div id="tl_assignment_data_merge" class="tl_listing_container">
+    <?php if (empty($this->deletedData) && empty($this->deletedAssignees)) : ?>
+        Nothing to merge, no duplicates found.
+    <?php else: ?>
+        <?php implode("\n", $this->deletedData); ?>
+        <?php implode("\n", $this->deletedAssignees); ?>
+    <?php endif; ?>
+</div>

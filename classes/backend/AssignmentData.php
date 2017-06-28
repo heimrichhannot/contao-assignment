@@ -11,10 +11,127 @@
 namespace HeimrichHannot\Assignment\Backend;
 
 
+use HeimrichHannot\Assignment\AssigneeModel;
 use HeimrichHannot\Assignment\Assignment;
+use HeimrichHannot\Assignment\AssignmentDataModel;
 
 class AssignmentData extends \Backend
 {
+    /**
+     * Merge assignment data and assignees
+     */
+    public function merge()
+    {
+        /** @var \BackendTemplate|object $objTemplate */
+        $objTemplate               = new \BackendTemplate('be_assignment_data_merge');
+        $objTemplate->action       = ampersand(\Environment::get('request'));
+        $objTemplate->syncHeadline = $GLOBALS['TL_LANG']['tl_filecredit']['syncHeadline'];
+
+        if (($objAssignmentData = AssignmentDataModel::findByPid(\Input::get('id'))) !== null)
+        {
+            $arrDataDelete     = [];
+            $arrData           = [];
+            $arrAssigneeUpdate = [];
+            $arrAssigneeData   = [];
+            $arrAssigneeDelete = [];
+
+            while ($objAssignmentData->next())
+            {
+                if (!isset($objAssignmentData->{$objAssignmentData->type}))
+                {
+                    continue;
+                }
+
+                $arrData[$objAssignmentData->type][$objAssignmentData->{$objAssignmentData->type}][] = $objAssignmentData->id;
+            }
+
+            foreach ($arrData as $type => $sets)
+            {
+                foreach ($sets as $key => $values)
+                {
+                    // skip items with less than 1 item
+                    if (count($values) <= 1)
+                    {
+                        continue;
+                    }
+
+                    // use first id to merge children in
+                    $newId = array_shift($values);
+
+                    $objAssignees = AssigneeModel::findBy(["tl_assignee.pid IN(" . implode(',', array_map('intval', $values)) . ")"], null);
+
+                    if ($objAssignees === null)
+                    {
+                        continue;
+                    }
+
+                    while ($objAssignees->next())
+                    {
+                        if ($objAssignees->pid == $newId)
+                        {
+                            continue;
+                        }
+
+                        $oldId               = $objAssignees->id;
+                        $arrAssigneeUpdate[] = 'Update assignee ' . $objAssignees->pid . ' for type ' . $type . ':' . $key . ': set pid from ' . $oldId . ' to ' . $newId;
+                        $objAssignees->pid   = $newId;
+                        $objAssignees->save();
+                    }
+
+                    $arrDataDelete = array_merge($arrDataDelete, $values);
+                }
+            }
+
+            // delete merged assignment data
+            if (!empty($arrDataDelete))
+            {
+                \Database::getInstance()->execute("DELETE FROM tl_assignment_data WHERE id IN(" . implode(',', array_map('intval', $arrDataDelete)) . ")");
+            }
+
+
+            // remove duplicate assignees
+            foreach ($arrData as $type => $sets)
+            {
+                foreach ($sets as $key => $values)
+                {
+                    $objAssignees = AssigneeModel::findBy(["tl_assignee.pid IN(" . implode(',', array_map('intval', $values)) . ")"], null);
+
+                    while ($objAssignees->next())
+                    {
+                        if (!isset($objAssignees->{$objAssignees->type}))
+                        {
+                            continue;
+                        }
+
+                        // assignee already exists, delete
+                        if (is_array($arrAssigneeData[$key][$objAssignees->type]) && isset($arrAssigneeData[$key][$objAssignees->type][$objAssignees->{$objAssignees->type}]))
+                        {
+                            $arrAssigneeDelete[] = $objAssignees->id;
+                        }
+
+                        $arrAssigneeData[$key][$objAssignees->type][$objAssignees->{$objAssignees->type}][] = $objAssignees->id;
+                    }
+                }
+            }
+
+            // delete duplicate assignees
+            if (!empty($arrAssigneeDelete))
+            {
+                \Database::getInstance()->execute("DELETE FROM tl_assignee WHERE id IN(" . implode(',', array_map('intval', $arrAssigneeDelete)) . ")");
+            }
+        }
+
+        $objTemplate->deletedData = $arrDataDelete;
+        $objTemplate->deletedAssignees = $arrAssigneeDelete;
+
+        // Default variables
+        $objTemplate->backHref   = \System::getReferer(true);
+        $objTemplate->backTitle  = specialchars($GLOBALS['TL_LANG']['MSC']['backBTTitle']);
+        $objTemplate->backButton = $GLOBALS['TL_LANG']['MSC']['backBT'];
+
+        return $objTemplate->parse();
+    }
+
     public function listChildren($arrRow)
     {
         $name = $arrRow['id'];

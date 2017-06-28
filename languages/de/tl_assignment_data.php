@@ -24,10 +24,11 @@ $arrLang['publish_legend'] = 'Veröffentlichung';
 /**
  * Buttons
  */
-$arrLang['new']       = ['Neue Zuordnungswerte', 'Zuordnungswerte erstellen'];
-$arrLang['edit']      = ['Zuordnungswerte bearbeiten', 'Zuordnungswerte ID %s bearbeiten'];
-$arrLang['copy']      = ['Zuordnungswerte duplizieren', 'Zuordnungswerte ID %s duplizieren'];
-$arrLang['delete']    = ['Zuordnungswerte löschen', 'Zuordnungswerte ID %s löschen'];
-$arrLang['toggle']    = ['Zuordnungswerte veröffentlichen', 'Zuordnungswerte ID %s veröffentlichen/verstecken'];
-$arrLang['show']      = ['Zuordnungswerte Details', 'Zuordnungswerte-Details ID %s anzeigen'];
-$arrLang['assignees'] = ['', ''];
+$arrLang['new']    = ['Neue Zuordnungswerte', 'Zuordnungswerte erstellen'];
+$arrLang['edit']   = ['Zuordnungswerte bearbeiten', 'Zuordnungswerte ID %s bearbeiten'];
+$arrLang['copy']   = ['Zuordnungswerte duplizieren', 'Zuordnungswerte ID %s duplizieren'];
+$arrLang['delete'] = ['Zuordnungswerte löschen', 'Zuordnungswerte ID %s löschen'];
+$arrLang['toggle'] = ['Zuordnungswerte veröffentlichen', 'Zuordnungswerte ID %s veröffentlichen/verstecken'];
+$arrLang['show']   = ['Zuordnungswerte Details', 'Zuordnungswerte-Details ID %s anzeigen'];
+$arrLang['merge']  = ['Zusammenführen', 'Zuordnungswerte und Beauftragte anhand des Typs der Zuordnungswerte zusammenführen (Zuordnungswerte werden anschließend anhand des Typs einzigartig vorgehalten, Beauftragte zusammengeführt und doppelte Beauftragte entfernt).'];
+
