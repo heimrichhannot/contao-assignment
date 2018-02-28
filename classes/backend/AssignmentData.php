@@ -153,115 +153,105 @@ class AssignmentData extends \Backend
     {
         $objUser     = \BackendUser::getInstance();
         $objSession  = \Session::getInstance();
-        $objDatabase = \Database::getInstance();
 
         if ($objUser->isAdmin)
         {
             return;
         }
 
-        // Set root IDs
+        // Set the root IDs
         if (!is_array($objUser->assignments) || empty($objUser->assignments))
         {
-            $root = [0];
+            $root = array(0);
         }
         else
         {
             $root = $objUser->assignments;
         }
 
-        $GLOBALS['TL_DCA']['tl_assignment_data']['list']['sorting']['root'] = $root;
-
-        // Check permissions to add archives
-        if (!$objUser->hasAccess('create', 'assignmentp'))
-        {
-            $GLOBALS['TL_DCA']['tl_assignment_data']['config']['closed'] = true;
-        }
+        $id = strlen(\Input::get('id')) ? \Input::get('id') : CURRENT_ID;
 
         // Check current action
         switch (\Input::get('act'))
         {
-            case 'create':
-            case 'select':
+            case 'paste':
                 // Allow
                 break;
 
-            case 'edit':
-                // Dynamically add the record to the user profile
-                if (!in_array(\Input::get('id'), $root))
+            case 'create':
+                if (!strlen(\Input::get('pid')) || !in_array(\Input::get('pid'), $root))
                 {
-                    $arrNew = $objSession->get('new_records');
-
-                    if (is_array($arrNew['tl_assignment_data']) && in_array(\Input::get('id'), $arrNew['tl_assignment_data']))
-                    {
-                        // Add permissions on user level
-                        if ($objUser->inherit == 'custom' || !$objUser->groups[0])
-                        {
-                            $objUser = $objDatabase->prepare("SELECT assignments, assignmentp FROM tl_user WHERE id=?")->limit(1)->execute($objUser->id);
-
-                            $arrModulep = deserialize($objUser->assignmentp);
-
-                            if (is_array($arrModulep) && in_array('create', $arrModulep))
-                            {
-                                $arrModules   = deserialize($objUser->assignments);
-                                $arrModules[] = \Input::get('id');
-
-                                $objDatabase->prepare("UPDATE tl_user SET assignments=? WHERE id=?")->execute(serialize($arrModules), $objUser->id);
-                            }
-                        }
-
-                        // Add permissions on group level
-                        elseif ($objUser->groups[0] > 0)
-                        {
-                            $objGroup = $objDatabase->prepare("SELECT assignments, assignmentp FROM tl_user_group WHERE id=?")->limit(1)->execute($objUser->groups[0]);
-
-                            $arrModulep = deserialize($objGroup->assignmentp);
-
-                            if (is_array($arrModulep) && in_array('create', $arrModulep))
-                            {
-                                $arrModules   = deserialize($objGroup->assignments);
-                                $arrModules[] = \Input::get('id');
-
-                                $objDatabase->prepare("UPDATE tl_user_group SET assignments=? WHERE id=?")->execute(serialize($arrModules), $objUser->groups[0]);
-                            }
-                        }
-
-                        // Add new element to the user object
-                        $root[]               = \Input::get('id');
-                        $objUser->assignments = $root;
-                    }
-                }
-            // No break;
-
-            case 'copy':
-            case 'delete':
-            case 'show':
-                if (!in_array(\Input::get('id'), $root) || (\Input::get('act') == 'delete' && !$objUser->hasAccess('delete', 'assignmentp')))
-                {
-                    \System::log('Not enough permissions to ' . \Input::get('act') . ' assignment_data ID "' . \Input::get('id') . '"', __METHOD__, TL_ERROR);
+                    \System::log('Not enough permissions to create association data in association archive ID "'.\Input::get('pid').'"', __METHOD__, TL_ERROR);
                     \Controller::redirect('contao/main.php?act=error');
                 }
                 break;
 
+            case 'cut':
+            case 'copy':
+                if (!in_array(\Input::get('pid'), $root))
+                {
+                    \System::log('Not enough permissions to '.\Input::get('act').' association data ID "'.$id.'" to association archive ID "'.\Input::get('pid').'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+            // NO BREAK STATEMENT HERE
+
+            case 'edit':
+            case 'show':
+            case 'delete':
+            case 'toggle':
+            case 'feature':
+                $objArchive = \Database::getInstance()->prepare("SELECT pid FROM tl_assignment_data WHERE id=?")
+                    ->limit(1)
+                    ->execute($id);
+
+                if ($objArchive->numRows < 1)
+                {
+                    \System::log('Invalid association data ID "'.$id.'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+
+                if (!in_array($objArchive->pid, $root))
+                {
+                    \System::log('Not enough permissions to '.\Input::get('act').' association data ID "'.$id.'" of association archive ID "'.$objArchive->pid.'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+                break;
+
+            case 'select':
             case 'editAll':
             case 'deleteAll':
             case 'overrideAll':
+            case 'cutAll':
+            case 'copyAll':
+                if (!in_array($id, $root))
+                {
+                    \System::log('Not enough permissions to access association data ID "'.$id.'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+
+                $objArchive = \Database::getInstance()->prepare("SELECT id FROM tl_assignment_data WHERE pid=?")
+                    ->execute($id);
+
+                if ($objArchive->numRows < 1)
+                {
+                    \System::log('Invalid association archive ID "'.$id.'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+
                 $session = $objSession->getData();
-                if (\Input::get('act') == 'deleteAll' && !$objUser->hasAccess('delete', 'assignmentp'))
-                {
-                    $session['CURRENT']['IDS'] = [];
-                }
-                else
-                {
-                    $session['CURRENT']['IDS'] = array_intersect($session['CURRENT']['IDS'], $root);
-                }
+                $session['CURRENT']['IDS'] = array_intersect($session['CURRENT']['IDS'], $objArchive->fetchEach('id'));
                 $objSession->setData($session);
                 break;
 
             default:
                 if (strlen(\Input::get('act')))
                 {
-                    \System::log('Not enough permissions to ' . \Input::get('act') . ' assignment_data archives', __METHOD__, TL_ERROR);
+                    \System::log('Invalid command "'.\Input::get('act').'"', __METHOD__, TL_ERROR);
+                    \Controller::redirect('contao/main.php?act=error');
+                }
+                elseif (!in_array($id, $root))
+                {
+                    \System::log('Not enough permissions to access association archive ID ' . $id, __METHOD__, TL_ERROR);
                     \Controller::redirect('contao/main.php?act=error');
                 }
                 break;
