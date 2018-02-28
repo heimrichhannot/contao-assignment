@@ -11,6 +11,9 @@
 namespace HeimrichHannot\Assignment\Backend;
 
 
+use HeimrichHannot\Assignment\AssigneeModel;
+use HeimrichHannot\Assignment\AssignmentDataModel;
+
 class Assignee extends \Backend
 {
 
@@ -69,6 +72,27 @@ class Assignee extends \Backend
 
         $id = strlen(\Input::get('id')) ? \Input::get('id') : CURRENT_ID;
 
+        if(null === ($assignee = AssigneeModel::findByPk($id))){
+            \Controller::log(
+                'Unable to find assignee model for assignee item ID "' . $id . '"',
+                'tl_assignee checkPermission',
+                TL_ERROR
+            );
+            \Controller::redirect('contao/main.php?act=error');
+        }
+
+        if(null === ($assignmentData = AssignmentDataModel::findByPk($assignee->pid)))
+        {
+            \Controller::log(
+                'Unable to find assignment data model for ID "' . $assignee->pid . '"',
+                'tl_assignee checkPermission',
+                TL_ERROR
+            );
+            \Controller::redirect('contao/main.php?act=error');
+        }
+
+        $pid = $assignmentData->pid;
+
         // Check current action
         switch (\Input::get('act'))
         {
@@ -77,10 +101,10 @@ class Assignee extends \Backend
                 break;
 
             case 'create':
-                if (!strlen(\Input::get('pid')) || !in_array(\Input::get('pid'), $root))
+                if (!in_array($pid, $root))
                 {
                     \Controller::log(
-                        'Not enough permissions to create assignee items in assignee archive ID "' . \Input::get('pid') . '"',
+                        'Not enough permissions to create assignee items in assignee archive ID "' . $pid . '"',
                         'tl_assignee checkPermission',
                         TL_ERROR
                     );
@@ -90,10 +114,10 @@ class Assignee extends \Backend
 
             case 'cut':
             case 'copy':
-                if (!in_array(\Input::get('pid'), $root))
+                if (!in_array($pid, $root))
                 {
                     \Controller::log(
-                        'Not enough permissions to ' . \Input::get('act') . ' assignee item ID "' . $id . '" to assignee archive ID "' . \Input::get('pid') . '"',
+                        'Not enough permissions to ' . \Input::get('act') . ' assignee item ID "' . $id . '" to assignee archive ID "' . $pid . '"',
                         'tl_assignee checkPermission',
                         TL_ERROR
                     );
@@ -106,18 +130,10 @@ class Assignee extends \Backend
             case 'delete':
             case 'toggle':
             case 'feature':
-                $objArchive = $objDatabase->prepare("SELECT pid FROM tl_assignee WHERE id=?")->limit(1)->execute($id);
-
-                if ($objArchive->numRows < 1)
-                {
-                    \Controller::log('Invalid assignee item ID "' . $id . '"', 'tl_assignee checkPermission', TL_ERROR);
-                    \Controller::redirect('contao/main.php?act=error');
-                }
-
-                if (!in_array($objArchive->pid, $root))
+                if (!in_array($pid, $root))
                 {
                     \Controller::log(
-                        'Not enough permissions to ' . \Input::get('act') . ' assignee item ID "' . $id . '" of assignee archive ID "' . $objArchive->pid . '"',
+                        'Not enough permissions to ' . \Input::get('act') . ' assignee item ID "' . $id . '" of assignee archive ID "' . $pid . '"',
                         'tl_assignee checkPermission',
                         TL_ERROR
                     );
@@ -151,12 +167,7 @@ class Assignee extends \Backend
                 break;
 
             default:
-                if (strlen(\Input::get('act')))
-                {
-                    \Controller::log('Invalid command "' . \Input::get('act') . '"', 'tl_assignee checkPermission', TL_ERROR);
-                    \Controller::redirect('contao/main.php?act=error');
-                }
-                elseif (!in_array($id, $root))
+                if (!in_array($pid, $root))
                 {
                     \Controller::log('Not enough permissions to access assignee archive ID ' . $id, 'tl_assignee checkPermission', TL_ERROR);
                     \Controller::redirect('contao/main.php?act=error');
