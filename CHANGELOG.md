@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2018-02-28
+
+### Fixed
+- set default value for type `field` in `tl_assignee` to `\HeimrichHannot\Assignment\Assignment::TYPE_ASSIGNEE_MEMBER`
+
 ## [1.0.4] - 2018-02-28
 
 ### Fixed

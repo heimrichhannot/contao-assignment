@@ -100,7 +100,7 @@ $GLOBALS['TL_DCA']['tl_assignee'] = [
         ],
         'type'      => [
             'label'            => &$GLOBALS['TL_LANG']['tl_assignee']['type'],
-            'default'          => 'text',
+            'default'          => \HeimrichHannot\Assignment\Assignment::TYPE_ASSIGNEE_MEMBER,
             'exclude'          => true,
             'filter'           => true,
             'inputType'        => 'select',
